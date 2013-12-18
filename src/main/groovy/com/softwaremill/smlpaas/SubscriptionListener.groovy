@@ -22,8 +22,6 @@ class SubscriptionListener implements PacketListener{
         Presence presence = packet as Presence
 
         if (presence.type == Presence.Type.subscribe) {
-            println presence
-
             VCard vCard = new VCard();
             vCard.load(conn, presence.from)
 
