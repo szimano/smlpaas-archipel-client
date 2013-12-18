@@ -24,6 +24,8 @@ dependencies {
     compile 'org.igniterealtime.smack:smack:3.2.1'
     compile 'org.igniterealtime.smack:smackx:3.2.1'
 
+    compile fileTree(dir: 'lib', include: '*.jar')
+
     // We use the awesome Spock testing and specification framework
     testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
     testCompile 'junit:junit:4.11'

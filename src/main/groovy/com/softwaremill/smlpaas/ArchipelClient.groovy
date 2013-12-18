@@ -1,4 +1,6 @@
 package com.softwaremill.smlpaas
+
+import com.bethecoder.ascii_table.ASCIITable
 import com.softwaremill.smlpaas.packets.ArchipelPacket
 import org.jivesoftware.smack.Chat
 import org.jivesoftware.smack.Connection
@@ -36,6 +38,7 @@ class ArchipelClient extends Thread {
             case "clone":
                 cloneVM(args.drop(1))
                 break
+            case "status":
             case "list":
                 listVMs()
                 break
@@ -85,7 +88,7 @@ class ArchipelClient extends Thread {
         p.setProperty("username", args[1])
         p.setProperty("password", Base64.encodeBytes(args[2].getBytes()))
 
-        configFile.withOutputStream {p.store(it, "saved by archipel client")}
+        configFile.withOutputStream { p.store(it, "saved by archipel client") }
 
     }
 
@@ -96,7 +99,7 @@ class ArchipelClient extends Thread {
             println "Usage USERNAME PASSWORD start VM_NAME"
         }
 
-        sendMessageTo(conn, "start", args[0])
+        sendMessageTo(conn, "start", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
     }
 
     static def stopVM(String[] args) {
@@ -106,19 +109,17 @@ class ArchipelClient extends Thread {
             println "Usage USERNAME PASSWORD stop VM_NAME"
         }
 
-        sendMessageTo(conn, "stop", args[0])
+        sendMessageTo(conn, "stop", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
     }
 
-    static def sendMessageTo(Connection conn, String message, String vmName) {
+    static def sendMessageTo(Connection conn, String message, String vmName, Closure onResponse) {
         def userID = findVMByName(conn, vmName)
 
         def chatManager = conn.getChatManager()
         def chat = chatManager.createChat(userID, new MessageListener() {
             @Override
             void processMessage(Chat chat, Message msg) {
-                // we do not really care
-                println("message from ${chat.participant}: ${msg.body}")
-                shouldRun = false
+                onResponse(chat, msg)
             }
         })
 
@@ -172,16 +173,37 @@ class ArchipelClient extends Thread {
     }
 
     static void listVMs() {
-        println "Name: ID"
-        println "========"
+        String[] header = ["Name", "ID", "Status"]
+
+        List<List<String>> data = new ArrayList<>()
 
         Connection conn = connect()
 
         conn.getRoster().getEntries().each {
+            shouldRun = true
             if (it.groups.find { it.name == PAAS_GROUP }) {
-                println "${it.name}: ${it.user}"
+                def row = new ArrayList<String>()
+
+                def entry = it
+                sendMessageTo(conn, "info", it.name, {
+                    chat, msg ->
+                        row.add(entry.name)
+                        row.add(entry.user)
+                        row.add(msg.body.substring(0, msg.body.indexOf(",")))
+
+                        data.add(row)
+                        shouldRun = false
+                })
+            } else {
+                shouldRun = false
+            }
+
+            while (shouldRun) {
+                sleep(100)
             }
         }
+
+        ASCIITable.getInstance().printTable(header, data as String[][]);
     }
 }
 
