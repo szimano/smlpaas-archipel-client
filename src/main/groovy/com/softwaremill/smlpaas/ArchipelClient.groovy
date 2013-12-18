@@ -48,6 +48,9 @@ class ArchipelClient extends Thread {
             case "stop":
                 stopVM(args.drop(1))
                 break
+            case "destroy":
+                destroyVM(args.drop(1))
+                break
             default:
                 println "Unknown command: ${args[2]}"
                 break
@@ -79,7 +82,7 @@ class ArchipelClient extends Thread {
 
     static def setup(String[] args) {
         if (args.length != 3) {
-            println "Usage config SERVER USERNAME PASSWORD"
+            println "Usage: config SERVER USERNAME PASSWORD"
         }
 
         Properties p = new Properties()
@@ -96,7 +99,7 @@ class ArchipelClient extends Thread {
         Connection conn = connect()
 
         if (args.length != 1) {
-            println "Usage USERNAME PASSWORD start VM_NAME"
+            println "Usage: start VM_NAME"
         }
 
         sendMessageTo(conn, "start", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
@@ -106,10 +109,20 @@ class ArchipelClient extends Thread {
         Connection conn = connect()
 
         if (args.length != 1) {
-            println "Usage USERNAME PASSWORD stop VM_NAME"
+            println "Usage: stop VM_NAME"
         }
 
         sendMessageTo(conn, "stop", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+    }
+
+    static def destroyVM(String[] args) {
+        Connection conn = connect()
+
+        if (args.length != 1) {
+            println "Usage: destroy VM_NAME"
+        }
+
+        sendMessageTo(conn, "destroy", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
     }
 
     static def sendMessageTo(Connection conn, String message, String vmName, Closure onResponse) {
