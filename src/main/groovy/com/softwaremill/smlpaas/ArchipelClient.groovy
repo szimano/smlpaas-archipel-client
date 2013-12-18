@@ -203,7 +203,12 @@ class ArchipelClient extends Thread {
             }
         }
 
-        ASCIITable.getInstance().printTable(header, data as String[][]);
+        if (data.empty) {
+            println "No VMs found"
+        }
+        else {
+            ASCIITable.getInstance().printTable(header, data as String[][]);
+        }
     }
 }
 
