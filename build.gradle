@@ -37,6 +37,19 @@ task uberjar(type: Jar) {
     from configurations.runtime.asFileTree.files.collect { zipTree(it) }
 
     manifest {
-        attributes 'Main-Class': 'com.softwaremill.smlpaas.ArchipelClient'
+        attributes 'Main-Class': 'com.softwaremill.smlpaas.ArchipelClientMain'
+    }
+}
+
+apply plugin: 'maven'
+
+project.group = 'com.softwaremill.smlpaas'
+project.version = '1-SNAPSHOT'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "https://nexus.softwaremill.com/content/repositories/releases/")
+        }
     }
 }

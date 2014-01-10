@@ -1,6 +1,5 @@
 package com.softwaremill.smlpaas
 
-import com.bethecoder.ascii_table.ASCIITable
 import com.softwaremill.smlpaas.packets.ArchipelPacket
 import org.jivesoftware.smack.Chat
 import org.jivesoftware.smack.Connection
@@ -12,8 +11,8 @@ import org.jivesoftware.smack.util.Base64
 
 class ArchipelClient extends Thread {
 
-    private static shouldRun = true
-    public static final String PAAS_GROUP = "smlpaas"
+    private shouldRun = true
+    public final String PAAS_GROUP = "smlpaas"
 
     static File configFile = new File(System.getProperty("user.home") + File.separator + ".smlpaas-archipel")
 
@@ -24,40 +23,7 @@ class ArchipelClient extends Thread {
         }
     }
 
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("Usage: COMMAND")
-            System.exit(-1)
-        }
-
-        switch (args[0]) {
-            case "setup":
-            case "config":
-                setup(args.drop(1))
-                break
-            case "clone":
-                cloneVM(args.drop(1))
-                break
-            case "status":
-            case "list":
-                listVMs()
-                break
-            case "start":
-                startVM(args.drop(1))
-                break
-            case "stop":
-                stopVM(args.drop(1))
-                break
-            case "destroy":
-                destroyVM(args.drop(1))
-                break
-            default:
-                println "Unknown command: ${args[2]}"
-                break
-        }
-    }
-
-    static Connection connect() {
+    Connection connect() {
         if (!configFile.exists()) {
             throw new RuntimeException("Config file ${configFile.absolutePath} does not exist. Run setup first")
         }
@@ -80,52 +46,37 @@ class ArchipelClient extends Thread {
         return conn
     }
 
-    static def setup(String[] args) {
-        if (args.length != 3) {
-            println "Usage: config SERVER USERNAME PASSWORD"
-        }
+    def setup(String server, String username, String password) {
 
         Properties p = new Properties()
 
-        p.setProperty("server", args[0])
-        p.setProperty("username", args[1])
-        p.setProperty("password", Base64.encodeBytes(args[2].getBytes()))
+        p.setProperty("server", server)
+        p.setProperty("username", username)
+        p.setProperty("password", Base64.encodeBytes(password.getBytes()))
 
         configFile.withOutputStream { p.store(it, "saved by archipel client") }
 
     }
 
-    static def startVM(String[] args) {
+    def startVM(String vmName) {
         Connection conn = connect()
 
-        if (args.length != 1) {
-            println "Usage: start VM_NAME"
-        }
-
-        sendMessageTo(conn, "start", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+        sendMessageTo(conn, "start", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
     }
 
-    static def stopVM(String[] args) {
+    def stopVM(String vmName) {
         Connection conn = connect()
 
-        if (args.length != 1) {
-            println "Usage: stop VM_NAME"
-        }
-
-        sendMessageTo(conn, "stop", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+        sendMessageTo(conn, "stop", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
     }
 
-    static def destroyVM(String[] args) {
+    def destroyVM(String vmName) {
         Connection conn = connect()
 
-        if (args.length != 1) {
-            println "Usage: destroy VM_NAME"
-        }
-
-        sendMessageTo(conn, "destroy", args[0], { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+        sendMessageTo(conn, "destroy", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
     }
 
-    static def sendMessageTo(Connection conn, String message, String vmName, Closure onResponse) {
+    def sendMessageTo(Connection conn, String message, String vmName, Closure onResponse) {
         def userID = findVMByName(conn, vmName)
 
         def chatManager = conn.getChatManager()
@@ -138,10 +89,10 @@ class ArchipelClient extends Thread {
 
         chat.sendMessage(message)
 
-        new ArchipelClient().start()
+        start()
     }
 
-    static def findVMByName(Connection conn, String name) {
+    def findVMByName(Connection conn, String name) {
         def id
 
         conn.getRoster().entries.each { if (it.name == name) id = it.user }
@@ -152,14 +103,8 @@ class ArchipelClient extends Thread {
         return id
     }
 
-    static void cloneVM(String[] args) {
-        if (args.length != 1) {
-            println "Usage: USERNAME PASSWORD clone NEW_VM_NAME"
-        }
-
+    void cloneVM(String newVM) {
         Connection conn = connect()
-
-        def newVM = args[0]
 
         String smlpaasID
 
@@ -185,26 +130,19 @@ class ArchipelClient extends Thread {
         conn.sendPacket(packet)
     }
 
-    static void listVMs() {
-        String[] header = ["Name", "ID", "Status"]
-
-        List<List<String>> data = new ArrayList<>()
+    List<VMStatus> listVMs() {
+        def vms = new ArrayList<VMStatus>()
 
         Connection conn = connect()
 
         conn.getRoster().getEntries().each {
             shouldRun = true
             if (it.groups.find { it.name == PAAS_GROUP }) {
-                def row = new ArrayList<String>()
-
                 def entry = it
                 sendMessageTo(conn, "info", it.name, {
                     chat, msg ->
-                        row.add(entry.name)
-                        row.add(entry.user)
-                        row.add(msg.body.substring(0, msg.body.indexOf(",")))
-
-                        data.add(row)
+                        vms.add(new VMStatus(name: entry.name, id: entry.user,
+                                status: msg.body.substring(0, msg.body.indexOf(","))))
                         shouldRun = false
                 })
             } else {
@@ -216,12 +154,7 @@ class ArchipelClient extends Thread {
             }
         }
 
-        if (data.empty) {
-            println "No VMs found"
-        }
-        else {
-            ASCIITable.getInstance().printTable(header, data as String[][]);
-        }
+        return vms
     }
 }
 

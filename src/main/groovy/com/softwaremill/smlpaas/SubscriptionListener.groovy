@@ -36,9 +36,9 @@ class SubscriptionListener implements PacketListener{
 
             if (newVM == name) {
 
-                def group = conn.getRoster().getGroup(ArchipelClient.PAAS_GROUP)
+                def group = conn.getRoster().getGroup(ArchipelClientMain.PAAS_GROUP)
                 if (group == null) {
-                    group = conn.getRoster().createGroup(ArchipelClient.PAAS_GROUP)
+                    group = conn.getRoster().createGroup(ArchipelClientMain.PAAS_GROUP)
                 }
 
                 conn.getRoster().createEntry(presence.from, name, group.name)
