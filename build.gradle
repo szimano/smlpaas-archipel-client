@@ -31,7 +31,12 @@ dependencies {
     testCompile 'junit:junit:4.11'
 }
 
-task uberjar(type: Jar) {
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task uberjar(type: Jar, dependsOn: sourcesJar) {
 
     from files(sourceSets.main.output.classesDir)
     from configurations.runtime.asFileTree.files.collect { zipTree(it) }

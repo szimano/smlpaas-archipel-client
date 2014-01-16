@@ -6,7 +6,7 @@ import org.jivesoftware.smack.packet.Packet
 import org.jivesoftware.smack.packet.Presence
 import org.jivesoftware.smackx.packet.VCard
 
-class SubscriptionListener implements PacketListener{
+class SubscriptionListener implements PacketListener {
 
     private static final String FN = "FN"
     private final Connection conn
@@ -19,31 +19,35 @@ class SubscriptionListener implements PacketListener{
 
     @Override
     void processPacket(Packet packet) {
-        Presence presence = packet as Presence
+        if (packet instanceof Presence) {
+            Presence presence = packet as Presence
 
-        if (presence.type == Presence.Type.subscribe) {
-            VCard vCard = new VCard();
-            vCard.load(conn, presence.from)
-
-            def name = vCard.getField(FN)
-
-            if (name == null) {
-                // vcard not yet created, try again in 5 seconds
-                try {Thread.sleep(5000)} catch (Exception e){}
+            if (presence.type == Presence.Type.subscribe) {
+                VCard vCard = new VCard();
                 vCard.load(conn, presence.from)
-                name = vCard.getField(FN)
-            }
 
-            if (newVM == name) {
+                def name = vCard.getField(FN)
 
-                def group = conn.getRoster().getGroup(ArchipelClientMain.PAAS_GROUP)
-                if (group == null) {
-                    group = conn.getRoster().createGroup(ArchipelClientMain.PAAS_GROUP)
+                if (name == null) {
+                    // vcard not yet created, try again in 5 seconds
+                    try { Thread.sleep(5000) } catch (Exception e) {}
+                    vCard.load(conn, presence.from)
+                    name = vCard.getField(FN)
                 }
 
-                conn.getRoster().createEntry(presence.from, name, group.name)
-            } else {
-                println "Got unexpected subscription request from $name / ${presence.from}"
+                println "Subscribing to machine: $name"
+
+                if (newVM == name) {
+
+                    def group = conn.getRoster().getGroup(ArchipelClient.PAAS_GROUP)
+                    if (group == null) {
+                        group = conn.getRoster().createGroup(ArchipelClient.PAAS_GROUP)
+                    }
+
+                    conn.getRoster().createEntry(presence.from, name, group.name)
+                } else {
+                    println "Got unexpected subscription request from $name / ${presence.from}"
+                }
             }
         }
     }

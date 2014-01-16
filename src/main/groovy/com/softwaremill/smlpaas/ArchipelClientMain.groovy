@@ -41,6 +41,7 @@ class ArchipelClientMain {
     static def setup(String[] args) {
         if (args.length != 3) {
             println "Usage: config SERVER USERNAME PASSWORD"
+            return
         }
 
         client.setup(args[0], args[1], args[2])
@@ -49,6 +50,7 @@ class ArchipelClientMain {
     static def startVM(String[] args) {
         if (args.length != 1) {
             println "Usage: start VM_NAME"
+            return
         }
 
         client.startVM(args[0])
@@ -57,6 +59,7 @@ class ArchipelClientMain {
     static def stopVM(String[] args) {
         if (args.length != 1) {
             println "Usage: stop VM_NAME"
+            return
         }
 
         client.stopVM(args[0])
@@ -65,6 +68,7 @@ class ArchipelClientMain {
     static def destroyVM(String[] args) {
         if (args.length != 1) {
             println "Usage: destroy VM_NAME"
+            return
         }
 
         client.destroyVM(args[0])
@@ -73,6 +77,7 @@ class ArchipelClientMain {
     static void cloneVM(String[] args) {
         if (args.length != 1) {
             println "Usage: USERNAME PASSWORD clone NEW_VM_NAME"
+            return
         }
 
         def newVM = args[0]
