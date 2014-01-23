@@ -32,6 +32,9 @@ class ArchipelClientMain {
             case "destroy":
                 destroyVM(args.drop(1))
                 break
+            case "xml":
+                xmlVM(args.drop(1))
+                break
             default:
                 println "Unknown command: ${args[2]}"
                 break
@@ -72,6 +75,15 @@ class ArchipelClientMain {
         }
 
         client.destroyVM(args[0])
+    }
+
+    static def xmlVM(String[] args) {
+        if (args.length != 1) {
+            println "Usage: xml VM_NAME"
+            return
+        }
+
+        println client.xml(args[0])
     }
 
     static void cloneVM(String[] args) {

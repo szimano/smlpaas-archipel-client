@@ -62,19 +62,30 @@ class ArchipelClient extends Thread {
     def startVM(String vmName) {
         Connection conn = connect()
 
-        sendMessageTo(conn, "start", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+        sendMessageTo(conn, "start", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false; conn.disconnect() })
     }
 
     def stopVM(String vmName) {
         Connection conn = connect()
 
-        sendMessageTo(conn, "stop", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+        sendMessageTo(conn, "stop", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false; conn.disconnect() })
     }
 
     def destroyVM(String vmName) {
         Connection conn = connect()
 
-        sendMessageTo(conn, "destroy", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false })
+        sendMessageTo(conn, "destroy", vmName, { chat, msg -> println("message from ${chat.participant}: ${msg.body}"); shouldRun = false; conn.disconnect() })
+    }
+
+    def xml(String vmName) {
+        Connection conn = connect()
+
+        String response
+        sendMessageTo(conn, "xml", vmName, {chat, msg -> response = msg.body; shouldRun = false; conn.disconnect()})
+
+        while (shouldRun) {sleep(100)}
+
+        return response
     }
 
     def sendMessageTo(Connection conn, String message, String vmName, Closure onResponse) {
